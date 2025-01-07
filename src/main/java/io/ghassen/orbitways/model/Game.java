@@ -12,15 +12,19 @@ public class Game {
     private int blackScore;
     private int whiteScore;
 
-    // NEW: Track which user is “Black” and which user is “White”.
-    // In a real system, you might store actual user IDs (like "user123"),
-    // but we’ll store simple identifiers or nicknames for this demo.
+    // Track which user is “Black” and which user is “White”.
     private String playerBlack;
     private String playerWhite;
+
+    // For a “best of X” scenario:
+    private int maxScore;        // e.g. 3
+    private boolean matchDone;   // if true, entire match is finished
+    private CellValue finalWinner; // B or W if match is concluded
 
     public Game(String roomId) {
         this.roomId = roomId;
         this.board = new CellValue[4][4];
+        this.maxScore = 3;
         resetBoard(true);
     }
 
@@ -33,10 +37,12 @@ public class Game {
             }
         }
         this.currentPlayer = CellValue.B;
+
         if (clearScore) {
             this.blackScore = 0;
             this.whiteScore = 0;
+            this.matchDone = false;
+            this.finalWinner = null;
         }
     }
-
 }

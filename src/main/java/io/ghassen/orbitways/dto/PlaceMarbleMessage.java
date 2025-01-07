@@ -1,11 +1,11 @@
-package io.ghassen.orbitways.controller;
+package io.ghassen.orbitways.dto;
 
 import lombok.Data;
 
 @Data
 public class PlaceMarbleMessage {
     private String roomId;
-    private String userId; // <--- new
+    private String userId;
     private int row;
     private int col;
 

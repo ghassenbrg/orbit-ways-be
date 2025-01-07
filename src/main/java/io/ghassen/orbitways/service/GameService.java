@@ -11,14 +11,16 @@ import java.util.Map;
 public class GameService {
     private final Map<String, Game> rooms = new HashMap<>();
 
-    public Game createGame(String roomId, String hostId, String hostColor) {
+    public Game createGame(String roomId, String hostId, String hostColor, int maxScore) {
         Game game = new Game(roomId);
+        game.setMaxScore(maxScore);  // set how many rounds to win
+
         // If host picks "B", we store host as Black.
         if (hostColor.equalsIgnoreCase("B")) {
             game.setPlayerBlack(hostId);
+            game.setCurrentPlayer(CellValue.B);
         } else {
             game.setPlayerWhite(hostId);
-            // Also set currentPlayer to 'W' if host is White initially
             game.setCurrentPlayer(CellValue.W);
         }
         rooms.put(roomId, game);
@@ -30,24 +32,44 @@ public class GameService {
     }
 
     /**
-     * Join the game as either 'B' or 'W', if available
+     * Join the game as either 'B' or 'W', if available.
+     * If the chosen color is already taken, we try to assign the other color.
+     * If both are taken, return null.
      */
     public Game joinGame(String roomId, String joinerId, String joinerColor) {
-        // If room doesn't exist, return null or create a new one? Up to you.
         if (!rooms.containsKey(roomId)) {
-            return null;
+            return null; // or create a new one, up to you
         }
         Game game = rooms.get(roomId);
 
-        // If joiner wants black but black is already taken, or similarly for white, handle error or override
+        // If already have 2 players, disallow further joining
+        if (game.getPlayerBlack() != null && game.getPlayerWhite() != null) {
+            return null; // room full
+        }
+
+        // If user wants black but black is taken
         if (joinerColor.equalsIgnoreCase("B")) {
-            // If black slot is free
-            if (game.getPlayerBlack() == null) {
+            if (game.getPlayerBlack() != null) {
+                // black is taken, so let's try white
+                if (game.getPlayerWhite() == null) {
+                    game.setPlayerWhite(joinerId);
+                } else {
+                    return null; // both taken
+                }
+            } else {
+                // black was free
                 game.setPlayerBlack(joinerId);
             }
         } else {
-            // If white slot is free
-            if (game.getPlayerWhite() == null) {
+            // user wants white
+            if (game.getPlayerWhite() != null) {
+                // white taken => try black
+                if (game.getPlayerBlack() == null) {
+                    game.setPlayerBlack(joinerId);
+                } else {
+                    return null; // both taken
+                }
+            } else {
                 game.setPlayerWhite(joinerId);
             }
         }
@@ -56,38 +78,44 @@ public class GameService {
     }
 
     /**
-     * This is the critical part: we only accept the move if:
-     * 1) It's not gameOver
-     * 2) The currentPlayer matches the color of the user making the request
+     * Join the game as either 'B' or 'W', if available.
+     * If the chosen color is already taken, we try to assign the other color.
+     * If both are taken, return null.
      */
+    public Game getGame(String roomId, String joinerId) {
+        if (!rooms.containsKey(roomId)) {
+            return null;
+        }
+        Game game = rooms.get(roomId);
+
+        String joinerColor = joinerId.equals(game.getPlayerBlack()) ? "B" : "W";
+
+        return game;
+    }
+
     public Game placeMarble(String roomId, String userId, int r, int c) {
         Game game = rooms.get(roomId);
-        if (game == null || game.isGameOver()) {
-            return game; // no changes
+        if (game == null || game.isMatchDone() || game.isGameOver()) {
+            return game; // no changes if match is done or round is over
         }
 
         // Determine if user is black or white
         String blackId = game.getPlayerBlack();
         String whiteId = game.getPlayerWhite();
 
+        CellValue playerColor = null;
         if (blackId != null && blackId.equals(userId)) {
-            // user is black
-            if (game.getCurrentPlayer() != CellValue.B) {
-                // Not black's turn, ignore
-                return game;
-            }
+            playerColor = CellValue.B;
         } else if (whiteId != null && whiteId.equals(userId)) {
-            // user is white
-            if (game.getCurrentPlayer() != CellValue.W) {
-                // Not white's turn, ignore
-                return game;
-            }
-        } else {
-            // user not recognized as black or white; ignore
-            return game;
+            playerColor = CellValue.W;
+        }
+        if (playerColor == null) {
+            return game; // user not recognized
+        }
+        if (playerColor != game.getCurrentPlayer()) {
+            return game; // not your turn
         }
 
-        // If we get here, user is indeed the current player
         CellValue[][] board = game.getBoard();
         if (board[r][c] == CellValue.EMPTY) {
             board[r][c] = game.getCurrentPlayer();
@@ -153,6 +181,10 @@ public class GameService {
     }
 
     private void checkWinner(Game game) {
+        if (game.isMatchDone()) {
+            return; // do nothing if match is already done
+        }
+
         CellValue[][] board = game.getBoard();
 
         // Check rows
@@ -220,12 +252,30 @@ public class GameService {
         } else if (winner == CellValue.W) {
             game.setWhiteScore(game.getWhiteScore() + 1);
         }
+
+        // Check if we've hit maxScore => match is done
+        if (game.getBlackScore() >= game.getMaxScore()) {
+            game.setMatchDone(true);
+            game.setFinalWinner(CellValue.B);
+        } else if (game.getWhiteScore() >= game.getMaxScore()) {
+            game.setMatchDone(true);
+            game.setFinalWinner(CellValue.W);
+        }
     }
 
     public Game resetBoard(String roomId, boolean clearScore) {
         Game game = rooms.get(roomId);
         if (game == null) return null;
         game.resetBoard(clearScore);
+        return game;
+    }
+
+    public Game resetGame(String roomId, boolean fullReset) {
+        Game game = rooms.get(roomId);
+        if (game == null) return null;
+
+        game.resetBoard(fullReset);
+
         return game;
     }
 }

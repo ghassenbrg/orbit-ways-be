@@ -18,9 +18,10 @@ public class GameRestController {
     public Game createGame(
             @RequestParam String roomId,
             @RequestParam String hostId,
-            @RequestParam String hostColor // "B" or "W"
+            @RequestParam String hostColor, // "B" or "W"
+            @RequestParam(defaultValue = "3") int maxScore
     ) {
-        return gameService.createGame(roomId, hostId, hostColor);
+        return gameService.createGame(roomId, hostId, hostColor, maxScore);
     }
 
     @GetMapping("/join")
@@ -30,6 +31,14 @@ public class GameRestController {
             @RequestParam String joinerColor // "B" or "W"
     ) {
         return gameService.joinGame(roomId, joinerId, joinerColor);
+    }
+
+    @GetMapping("/get")
+    public Game joinGame(
+            @RequestParam String roomId,
+            @RequestParam String joinerId
+    ) {
+        return gameService.getGame(roomId, joinerId);
     }
 
     @PostMapping("/reset")
