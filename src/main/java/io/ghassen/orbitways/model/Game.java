@@ -1,5 +1,6 @@
 package io.ghassen.orbitways.model;
 
+import io.ghassen.orbitways.dto.PlaceMarbleMessage;
 import lombok.Data;
 
 @Data
@@ -11,6 +12,7 @@ public class Game {
     private CellValue winner;
     private int blackScore;
     private int whiteScore;
+    private PlaceMarbleMessage marbleMessage;
 
     // Track which user is “Black” and which user is “White”.
     private String playerBlack;

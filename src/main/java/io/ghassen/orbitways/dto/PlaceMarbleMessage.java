@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class PlaceMarbleMessage {
+    private String boardclientId;
     private String roomId;
     private String userId;
     private int row;

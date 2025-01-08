@@ -12,6 +12,9 @@ public class GameService {
     private final Map<String, Game> rooms = new HashMap<>();
 
     public Game createGame(String roomId, String hostId, String hostColor, int maxScore) {
+        if (rooms.containsKey(roomId)) {
+            throw new RuntimeException("Room with ID: " + roomId + " already exists.");
+        }
         Game game = new Game(roomId);
         game.setMaxScore(maxScore);  // set how many rounds to win
 
@@ -38,39 +41,42 @@ public class GameService {
      */
     public Game joinGame(String roomId, String joinerId, String joinerColor) {
         if (!rooms.containsKey(roomId)) {
-            return null; // or create a new one, up to you
+            throw new RuntimeException("Room with ID: " + roomId + " not found.");
         }
         Game game = rooms.get(roomId);
 
         // If already have 2 players, disallow further joining
-        if (game.getPlayerBlack() != null && game.getPlayerWhite() != null) {
-            return null; // room full
+        boolean isFull = game.getPlayerBlack() != null && game.getPlayerWhite() != null;
+        boolean isNewUser = !joinerId.equals(game.getPlayerBlack()) && !joinerId.equals(game.getPlayerWhite());
+        if (isFull && isNewUser) {
+            throw new RuntimeException("Room is full.");
         }
-
-        // If user wants black but black is taken
-        if (joinerColor.equalsIgnoreCase("B")) {
-            if (game.getPlayerBlack() != null) {
-                // black is taken, so let's try white
-                if (game.getPlayerWhite() == null) {
-                    game.setPlayerWhite(joinerId);
+        if (isNewUser) {
+            // If user wants black but black is taken
+            if (joinerColor.equalsIgnoreCase("B")) {
+                if (game.getPlayerBlack() != null) {
+                    // black is taken, so let's try white
+                    if (game.getPlayerWhite() == null) {
+                        game.setPlayerWhite(joinerId);
+                    } else {
+                        return null; // both taken
+                    }
                 } else {
-                    return null; // both taken
-                }
-            } else {
-                // black was free
-                game.setPlayerBlack(joinerId);
-            }
-        } else {
-            // user wants white
-            if (game.getPlayerWhite() != null) {
-                // white taken => try black
-                if (game.getPlayerBlack() == null) {
+                    // black was free
                     game.setPlayerBlack(joinerId);
-                } else {
-                    return null; // both taken
                 }
             } else {
-                game.setPlayerWhite(joinerId);
+                // user wants white
+                if (game.getPlayerWhite() != null) {
+                    // white taken => try black
+                    if (game.getPlayerBlack() == null) {
+                        game.setPlayerBlack(joinerId);
+                    } else {
+                        return null; // both taken
+                    }
+                } else {
+                    game.setPlayerWhite(joinerId);
+                }
             }
         }
 
@@ -84,7 +90,7 @@ public class GameService {
      */
     public Game getGame(String roomId, String joinerId) {
         if (!rooms.containsKey(roomId)) {
-            return null;
+            throw new RuntimeException("Room with ID: " + roomId + " not found.");
         }
         Game game = rooms.get(roomId);
 

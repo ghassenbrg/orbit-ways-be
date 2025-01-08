@@ -29,8 +29,9 @@ public class GameWebSocketController {
                 message.getCol()
         );
         if (updatedGame != null) {
+            updatedGame.setMarbleMessage(message);
             messagingTemplate.convertAndSend(
-                    "/topic/room/" + message.getRoomId(),
+                    "/topic/room/" + message.getRoomId() + "/placeMarble",
                     updatedGame
             );
         }
