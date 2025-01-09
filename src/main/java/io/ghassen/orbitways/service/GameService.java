@@ -22,16 +22,14 @@ public class GameService {
         if (hostColor.equalsIgnoreCase("B")) {
             game.setPlayerBlack(hostId);
             game.setCurrentPlayer(CellValue.B);
+            game.setPlayerToStart(CellValue.B);
         } else {
             game.setPlayerWhite(hostId);
             game.setCurrentPlayer(CellValue.W);
+            game.setPlayerToStart(CellValue.W);
         }
         rooms.put(roomId, game);
         return game;
-    }
-
-    public Game getGame(String roomId) {
-        return rooms.get(roomId);
     }
 
     /**
@@ -88,15 +86,12 @@ public class GameService {
      * If the chosen color is already taken, we try to assign the other color.
      * If both are taken, return null.
      */
-    public Game getGame(String roomId, String joinerId) {
+    public Game getGame(String roomId) {
         if (!rooms.containsKey(roomId)) {
             throw new RuntimeException("Room with ID: " + roomId + " not found.");
         }
-        Game game = rooms.get(roomId);
 
-        String joinerColor = joinerId.equals(game.getPlayerBlack()) ? "B" : "W";
-
-        return game;
+        return rooms.get(roomId);
     }
 
     public Game placeMarble(String roomId, String userId, int r, int c) {
@@ -192,6 +187,8 @@ public class GameService {
         }
 
         CellValue[][] board = game.getBoard();
+        boolean blackWins = false;
+        boolean whiteWins = false;
 
         // Check rows
         for (int r = 0; r < 4; r++) {
@@ -199,8 +196,11 @@ public class GameService {
                     board[r][0] == board[r][1] &&
                     board[r][1] == board[r][2] &&
                     board[r][2] == board[r][3]) {
-                handleWin(game, board[r][0]);
-                return;
+                if (board[r][0] == CellValue.B) {
+                    blackWins = true;
+                } else if (board[r][0] == CellValue.W) {
+                    whiteWins = true;
+                }
             }
         }
 
@@ -210,8 +210,11 @@ public class GameService {
                     board[0][c] == board[1][c] &&
                     board[1][c] == board[2][c] &&
                     board[2][c] == board[3][c]) {
-                handleWin(game, board[0][c]);
-                return;
+                if (board[0][c] == CellValue.B) {
+                    blackWins = true;
+                } else if (board[0][c] == CellValue.W) {
+                    whiteWins = true;
+                }
             }
         }
 
@@ -220,8 +223,11 @@ public class GameService {
                 board[0][0] == board[1][1] &&
                 board[1][1] == board[2][2] &&
                 board[2][2] == board[3][3]) {
-            handleWin(game, board[0][0]);
-            return;
+            if (board[0][0] == CellValue.B) {
+                blackWins = true;
+            } else if (board[0][0] == CellValue.W) {
+                whiteWins = true;
+            }
         }
 
         // Check anti-diagonal
@@ -229,24 +235,37 @@ public class GameService {
                 board[0][3] == board[1][2] &&
                 board[1][2] == board[2][1] &&
                 board[2][1] == board[3][0]) {
-            handleWin(game, board[0][3]);
-            return;
+            if (board[0][3] == CellValue.B) {
+                blackWins = true;
+            } else if (board[0][3] == CellValue.W) {
+                whiteWins = true;
+            }
         }
 
-        // Check tie
-        boolean isFull = true;
-        for (int r = 0; r < 4; r++) {
-            for (int c = 0; c < 4; c++) {
-                if (board[r][c] == CellValue.EMPTY) {
-                    isFull = false;
-                    break;
-                }
-            }
-            if (!isFull) break;
-        }
-        if (isFull) {
+        // Determine result
+        if (blackWins && whiteWins) {
             game.setGameOver(true);
             game.setWinner(null); // TIE
+        } else if (blackWins) {
+            handleWin(game, CellValue.B);
+        } else if (whiteWins) {
+            handleWin(game, CellValue.W);
+        } else {
+            // Check tie if the board is full
+            boolean isFull = true;
+            for (int r = 0; r < 4; r++) {
+                for (int c = 0; c < 4; c++) {
+                    if (board[r][c] == CellValue.EMPTY) {
+                        isFull = false;
+                        break;
+                    }
+                }
+                if (!isFull) break;
+            }
+            if (isFull) {
+                game.setGameOver(true);
+                game.setWinner(null); // TIE
+            }
         }
     }
 

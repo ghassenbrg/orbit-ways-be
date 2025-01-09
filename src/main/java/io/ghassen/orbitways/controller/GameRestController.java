@@ -34,11 +34,10 @@ public class GameRestController {
     }
 
     @GetMapping("/get")
-    public Game joinGame(
-            @RequestParam String roomId,
-            @RequestParam String joinerId
+    public Game getGame(
+            @RequestParam String roomId
     ) {
-        return gameService.getGame(roomId, joinerId);
+        return gameService.getGame(roomId);
     }
 
     @PostMapping("/reset")

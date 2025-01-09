@@ -3,8 +3,11 @@ package io.ghassen.orbitways.model;
 import io.ghassen.orbitways.dto.PlaceMarbleMessage;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class Game {
+    private final LocalDateTime creationDate;
     private String roomId;
     private CellValue[][] board;
     private CellValue currentPlayer;
@@ -22,8 +25,10 @@ public class Game {
     private int maxScore;        // e.g. 3
     private boolean matchDone;   // if true, entire match is finished
     private CellValue finalWinner; // B or W if match is concluded
+    private CellValue playerToStart;
 
     public Game(String roomId) {
+        creationDate = LocalDateTime.now();
         this.roomId = roomId;
         this.board = new CellValue[4][4];
         this.maxScore = 3;
@@ -38,13 +43,18 @@ public class Game {
                 board[r][c] = CellValue.EMPTY;
             }
         }
-        this.currentPlayer = CellValue.B;
 
         if (clearScore) {
             this.blackScore = 0;
             this.whiteScore = 0;
             this.matchDone = false;
             this.finalWinner = null;
+            this.playerToStart = CellValue.B;
+        } else {
+            this.playerToStart = CellValue.B.equals(this.playerToStart) ? CellValue.W : CellValue.B;
         }
+
+        this.currentPlayer = this.playerToStart;
+
     }
 }
