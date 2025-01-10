@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  orbit-ways-be:
+    image: ghassenbrg/orbit-ways-be:1.0.0-SNAPSHOT
+    ports:
+      - "8080:8080"
+    volumes:
+      - /app/config/application.properties:/app/config/application.properties:ro # Mount the external application.properties
+    networks:
+      - ghassen-io-network
+
+  orbit-ways-ionic:
+    image: ghassenbrg/orbit-ways-ionic:1.0.0-SNAPSHOT
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /app/config/nginx.conf:/app/config/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro # For SSL certificates
+    networks:
+      - ghassen-io-network
+
+networks:
+  ghassen-io-network:
+    driver: bridge
